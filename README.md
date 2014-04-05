@@ -1,6 +1,6 @@
 # Elements
 
-[**Elements**](jonase.github.io/elements) is a simple application for doing [straightedge &
+[**Elements**](http://jonase.github.io/elements) is a simple application for doing [straightedge &
 compass](http://en.wikipedia.org/wiki/Compass-and-straightedge_construction) geometric constructions. Here's how you construct a square:
 
 ![alt tag](https://raw.github.com/jonase/elements/master/square.gif)
