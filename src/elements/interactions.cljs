@@ -39,8 +39,8 @@
 
 (defn move-point [{:keys [chan]} store]
   (go-loop []
-    (let [{:keys [x y name]} (<! chan)]
-      (swap! store assoc name (s/point x y)))
+    (let [{:keys [x y object]} (<! chan)]
+      (swap! store assoc (:name object) (s/point x y)))
     (recur)))
 
 (defn create-point [{:keys [chan]} store]

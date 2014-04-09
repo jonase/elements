@@ -21,10 +21,10 @@
    :stroke-width 2
    :fill "none"})
 
-(defn drag-move-fn [chan name]
+(defn drag-move-fn [chan object]
   (fn [evt]
     (async/put! chan {:topic :drag
-                      :name name
+                      :object object
                       :x (.-offsetX evt)
                       :y (.-offsetY evt)})))
 
@@ -33,8 +33,8 @@
     (events/unlisten js/window EventType.MOUSEMOVE drag-move)
     (events/unlisten js/window EventType.MOUSEUP @drag-end)))
 
-(defn dragging [interact name]
-  (let [drag-move (drag-move-fn interact name)
+(defn dragging [interact object]
+  (let [drag-move (drag-move-fn interact object)
         drag-end-atom (atom nil)
         drag-end (drag-end-fn drag-move drag-end-atom)]
     (reset! drag-end-atom drag-end)
@@ -72,8 +72,7 @@
           {:cx x :cy y
            :on-mouse-down (on-mouse-down point chan)}
           (when-not draggable
-            {:fill "black"
-             :opacity "1"}))])
+            {:fill "black"}))])
 
 (defmethod shape :line [obj]
   (let [hover? (r/atom false)]
@@ -86,7 +85,9 @@
              :on-mouse-over #(reset! hover? true)
              :on-mouse-out #(reset! hover? false)}
          [:line {:stroke-width 7
-                 :stroke (if @hover? "rgba(255,255,255,0.2)" "rgba(0,0,0,0)") 
+                 :stroke (if @hover? 
+                           "rgba(255,255,255,0.2)" 
+                           "rgba(0,0,0,0)") 
                  :x1 x1 :y1 y1
                  :x2 x2 :y2 y2}]
          [:line (merge segment-defaults
@@ -101,7 +102,9 @@
              :on-mouse-over #(reset! hover? true)
              :on-mouse-out #(reset! hover? false)}
          [:circle {:stroke-width 7
-                   :stroke (if @hover? "rgba(255,255,255,0.2)" "rgba(0,0,0,0)")
+                   :stroke (if @hover? 
+                             "rgba(255,255,255,0.2)" 
+                             "rgba(0,0,0,0)")
                    :fill "none"
                    :cx x
                    :cy y
@@ -119,7 +122,7 @@
                 {:topic :click-point
                  :object point})
     (when (:draggable point)
-      (dragging chan (:name point)))))
+      (dragging chan point))))
 
 (defmethod on-mouse-down :line
   [line chan]
@@ -145,22 +148,18 @@
                                       :topic :click-canvas)))
       :style {:background-color "#0C1021"
               :margin-top "6px"}}
-     (let [resolve (memoize s/resolve)
-           store (reduce 
-                  (fn [store [name obj]]
-                    (assoc store name (s/resolve store obj)))
-                  store
-                  store)
-           store' (sort-by (fn [[k v]]
-                             (:z-index v)) 
-                           store)]
-       
-       (for [[name obj] store'
-             :when (:render obj)]
-         ^{:key (str name)}
-         [shape
-          (merge obj {:name name})
-          interact]))]))
+     (let [objects (->> store
+                        (reduce (fn [store [name obj]]
+                                  (assoc store 
+                                    name 
+                                    (s/resolve store obj)))
+                                store)
+                        (map (fn [[name obj]] (assoc obj :name name)))
+                        (sort-by :z-index)
+                        (filter :render))]
+       (for [object objects]
+         ^{:key (str (:name object))}
+         [shape object interact]))]))
 
 (defn toolbar [tools tool-chan]
   [:div 
